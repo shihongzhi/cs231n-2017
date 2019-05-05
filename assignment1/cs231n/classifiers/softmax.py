@@ -3,6 +3,9 @@ import numpy as np
 from random import shuffle
 from past.builtins import xrange
 
+#参考官方教案http://cs231n.github.io/neural-networks-case-study， 自己实现了代码
+#后来看了 https://www.jianshu.com/p/7a081b93ff75   加深了对原理的理解
+#信息熵
 def softmax_loss_naive(W, X, y, reg):
     """
     Softmax loss function, naive implementation (with loops)
@@ -24,7 +27,6 @@ def softmax_loss_naive(W, X, y, reg):
     # Initialize the loss and gradient to zero.
     loss = 0.0
     dW = np.zeros_like(W)
-
     #############################################################################
     # TODO: Compute the softmax loss and its gradient using explicit loops.     #
     # Store the loss in loss and the gradient in dW. If you are not careful     #
@@ -33,8 +35,26 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
 
+    props = np.zeros((num_train, num_classes))
+    loss = 0.0
+    for i in range(num_train):
+        scores = X[i].dot(W)
+
+        scores -= np.max(scores)
+        for j in range(num_classes):
+            props[i, j] = np.exp(scores[j]) / np.sum(np.exp(scores))
+            if j == y[i]:
+                loss += -np.log(props[i, j])
+                props[i, j] -= 1
+      
+    loss /= num_train
+    loss += reg * np.sum(W * W) / 2
+
+    dW = np.dot(X.T, props / num_train)
+    dW += reg * W
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
@@ -57,8 +77,22 @@ def softmax_loss_vectorized(W, X, y, reg):
     # regularization!                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    #参考http://cs231n.github.io/neural-networks-case-study/#linear
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
 
-    pass
+    props = np.zeros((num_train, num_classes))
+
+    scores = np.dot(X, W)
+    exp_scores = np.exp(scores)
+    props = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+    correct_logprops = -np.log(props[range(num_train), y])
+
+    loss = np.sum(correct_logprops) / num_train + reg * np.sum(W * W) / 2
+
+    dscores = props
+    dscores[range(num_train), y] -= 1
+    dW = np.dot(X.T, dscores / num_train) + reg * W 
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
